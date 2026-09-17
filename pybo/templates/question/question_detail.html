@@ -34,11 +34,15 @@
           {% include 'form_errors.html' %}
 
         <div class="mb-3">
-            {{ form.content(class = 'form-control', rows="10") }}
+            <textarea name="content" id="content"  rows="5">
+                {% if not g.user %}disabled{% endif %}
+            </textarea>
+            {{ form.content(class = 'form-control', disabled=(not g.user)) }}
                 <!--<textarea name="content" id="content" class="form-control" rows="10"></textarea>-->
         </div>
             {{ form.submit(class="btn btn-primary") }}
-                <!--<input type="submit" value="답변등록" class="btn btn-primary">-->
+                <input type="submit" value="답변등록" class="btn btn-primary">
+                    {% if not g.user %}disabled{% endif %}
     </form>
 </div>
 {% endblock %}

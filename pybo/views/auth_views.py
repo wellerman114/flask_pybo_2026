@@ -1,6 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from werkzeug.security import generate_password_hash
+import functools
 
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, g
+from werkzeug.security import generate_password_hash, check_password_hash
+
+from pybo.forms import UserLoginForm
 from pybo.forms import UserCreateForm
 from pybo.models import User
 
@@ -27,3 +30,49 @@ def signup():
 
     return render_template('auth/signup.html', form=form)
 
+@bp.route('/login', methods=['GET', 'POST'])
+def login():
+    form = UserLoginForm()
+    if request.method == 'POST' and form.validate_on_submit():
+        error = None   #플래시 메시지를 띄울 에러문구
+        user = User.query.filter_by(username=form.username.data).first()
+        if not user:
+            error = '존재하지 않는 사용자 입니다.'
+        elif not check_password_hash(user.password, form.password.data):
+            error ='비밀번호가 올바르지 않습니다.'
+        if error is None:
+            session.clear()
+            session['user_id'] = user.id
+            _next = request.args.get('next','') # next 파라미터 전달
+            if _next:
+                return redirect(_next)
+            else:
+                return redirect(url_for('main.index'))
+        else:
+            flash(error)
+    return render_template('auth/login.html', form=form)
+
+
+@bp.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('main.index'))
+
+# 라우팅 함수보다 먼저 실행
+@bp.before_app_request
+def load_logged_in_user():
+    user_id = session.get('user_id')
+    if user_id is None:
+        g.user = None
+    else:
+        g.user = User.query.get(user_id)
+
+# 데코레이터 함수
+def login_required(view):
+    @functools.wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if g.user is None:
+            _next = request.url if request.method == 'GET' else ''
+            return redirect(url_for('auth.login', next = _next))
+        return view(*args, **kwargs)
+    return wrapped_view
