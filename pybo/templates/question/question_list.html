@@ -3,7 +3,18 @@
 {% block content %}
 <!--질문 목록-->
 <div class="container my-3">
-    <div class="text-end">
+    <div class="row my-3">
+        <div class="col-6">
+            <div class="input-group">
+                <input type="search" id="search_kw" class="form-control" value="{{ kw or '' }}" placeholder="&#xAC80;&#xC0C9;&#xC5B4;&#xB97C; &#xC785;&#xB825;&#xD558;&#xC138;&#xC694;">
+                <button type="button" class="btn btn-outline-secondary" id="btn_search">&#xAC80;&#xC0C9;</button>
+                {#
+                <input type="search" id="search_kw" class="form-control" value="{{ kw or '' }}" placeholder="검색어를 입력하세요">
+                <button type="button" class="btn btn-outline-secondary" id="btn_search">검색</button>
+                #}
+            </div>
+        </div>
+        <div class="col-6 text-end">
         {% if g.user %}
         <a href="{{ url_for('question.create') }}" class="btn btn-outline-primary">질문등록하기</a>
         {% else %}
@@ -11,6 +22,8 @@
         {% endif %}
     </div>
 
+
+    </div>
 
     <table class="table table-hover">
         <thead>
@@ -88,4 +101,33 @@
     </nav>
      <!-- 페이징 처리 끝-->
 </div>
+
+<form id="searchForm" action="{{ url_for('question._list') }}" method="get">
+    <input type="hidden" id="kw" name="kw" value="{{ kw or '' }}">
+    <input type="hidden" id="page" name="page" value="{{ page }}">
+</form>
+{% endblock %}
+
+{% block script %}
+<script>
+    document.querySelectorAll('.page-link').forEach((element) => {
+        element.addEventListener('click', (event) => {
+            const page = new URL(element.href).searchParams.get('page');
+            if (!page) return;
+            event.preventDefault();
+            document.getElementById('page').value = page;
+            document.getElementById('searchForm').submit();
+        });
+    });
+
+    document.getElementById('btn_search').addEventListener('click', () => {
+        document.getElementById('kw').value = document.getElementById('search_kw').value;
+        document.getElementById('page').value = 1;
+        document.getElementById('searchForm').submit();
+    });
+
+    document.getElementById('search_kw').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') document.getElementById('btn_search').click();
+    });
+</script>
 {% endblock %}
